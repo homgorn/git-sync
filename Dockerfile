@@ -6,6 +6,7 @@ LABEL org.opencontainers.image.title="Git Sync Action" \
       org.opencontainers.image.url="https://refertur.net" \
       org.opencontainers.image.licenses="MIT"
 
+# hadolint ignore=DL3018 -- allow Alpine 3.21 security patch updates for git/openssh-client/ca-certificates
 RUN apk add --no-cache git openssh-client ca-certificates \
   && mkdir -p /etc/ssh \
   && (ssh-keyscan -t ed25519,rsa github.com gitlab.com bitbucket.org codeberg.org > /etc/ssh/git_sync_known_hosts 2>/dev/null || true)
