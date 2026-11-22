@@ -1,31 +1,56 @@
-name: Git Sync Action
-author: Wei He <github@weispot.com>
-description: 🔃  Sync between two independent repositories
+name: 'Git Sync Action (Hardened SDD)'
+author: 'Leinid D (homgorn) — hardened fork of wei/git-sync'
+description: 'Hardened GitHub Action for syncing branches and tags between independent Git repositories with safe push modes and dry-run.'
 branding:
   icon: 'git-branch'
   color: 'gray-dark'
+
 inputs:
   source_repo:
-    description: GitHub repo slug or full url
+    description: 'Source GitHub repo slug (owner/repo) or full SSH/HTTPS Git URL'
     required: true
   source_branch:
-    description: Branch name to sync from
+    description: 'Source branch name or refspec (e.g., main, refs/remotes/source/*, refs/tags/*)'
     required: true
   destination_repo:
-    description: GitHub repo slug or full url
+    description: 'Destination GitHub repo slug (owner/repo) or full SSH/HTTPS Git URL'
     required: true
   destination_branch:
-    description: Branch name to sync to
+    description: 'Destination branch name or refspec (e.g., main, refs/heads/*, refs/tags/*)'
     required: true
   ssh_private_key:
-    description: SSH key used to authenticate with source and destination ssh urls provided (optional if public or https url with authentication)
+    description: 'Shared SSH private key (ed25519/ecdsa/rsa) for both source and destination'
     required: false
   source_ssh_private_key:
-    description: SSH key used to authenticate with source ssh url provided (optional if public or https url with authentication)
+    description: 'SSH private key for source repo (overrides ssh_private_key)'
     required: false
   destination_ssh_private_key:
-    description: SSH key used to authenticate with destination ssh url provided (optional if public or https url with authentication)
+    description: 'SSH private key for destination repo (overrides ssh_private_key)'
     required: false
+  ssh_known_hosts:
+    description: 'Optional extra known_hosts lines for self-hosted Git servers'
+    required: false
+  strict_host_key_checking:
+    description: 'SSH host verification policy: yes (default, uses known_hosts) or accept-new'
+    required: false
+    default: 'yes'
+  push_mode:
+    description: 'Push safety mode: force (v3 default), force-with-lease, or fast-forward'
+    required: false
+    default: 'force'
+  dry_run:
+    description: 'When true, validates the sync with git push --dry-run without modifying destination'
+    required: false
+    default: 'false'
+  prune:
+    description: 'When true, prunes remote refs that no longer exist in source'
+    required: false
+    default: 'false'
+  sync_tags:
+    description: 'When true, also syncs all tags (refs/tags/*) to destination'
+    required: false
+    default: 'false'
+
 runs:
   using: 'docker'
   image: 'Dockerfile'
@@ -33,6 +58,12 @@ runs:
     SSH_PRIVATE_KEY: ${{ inputs.ssh_private_key }}
     SOURCE_SSH_PRIVATE_KEY: ${{ inputs.source_ssh_private_key }}
     DESTINATION_SSH_PRIVATE_KEY: ${{ inputs.destination_ssh_private_key }}
+    SSH_KNOWN_HOSTS: ${{ inputs.ssh_known_hosts }}
+    STRICT_HOST_KEY_CHECKING: ${{ inputs.strict_host_key_checking }}
+    PUSH_MODE: ${{ inputs.push_mode }}
+    DRY_RUN: ${{ inputs.dry_run }}
+    PRUNE: ${{ inputs.prune }}
+    SYNC_TAGS: ${{ inputs.sync_tags }}
   args:
     - ${{ inputs.source_repo }}
     - ${{ inputs.source_branch }}

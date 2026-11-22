@@ -1,0 +1,21 @@
+name: Feature Request (SDD)
+description: Propose a new capability following Spec-Driven Development
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / User Story
+      description: As a <role>, I want <capability>, so that <benefit>.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria (GIVEN / WHEN / THEN)
+      placeholder: |
+        GIVEN ...
+        WHEN ...
+        THEN ...
+    validations:
+      required: true

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-spec-gate:
+    name: ShellCheck, Hadolint & SDD Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify SDD & governance files exist
+        run: |
+          for f in specs/constitution.md LICENSE SECURITY.md CONTRIBUTING.md CHANGELOG.md README.md; do
+            test -s "$f" || { echo "Missing required file: $f"; exit 1; }
+          done
+
+      - name: ShellCheck scripts
+        run: shellcheck -S warning entrypoint.sh git-sync.sh
+
+      - name: Hadolint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  integration-tests:
+    name: Integration Tests (Real Bare Repos)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run integration test suite
+        run: python3 -m unittest discover -s tests -v
+
+  docker-build:
+    name: Docker Image Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t git-sync:ci .
+
+      - name: Smoke test container usage output
+        run: |
+          if docker run --rm git-sync:ci; then
+            echo "Expected non-zero exit when called with 0 args"
+            exit 1
+          fi

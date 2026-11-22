@@ -1,0 +1,14 @@
+.git
+.github
+docs
+specs
+tests
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+.gitignore
+.gitattributes
+.editorconfig
+.pytest_cache
+__pycache__

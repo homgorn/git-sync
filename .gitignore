@@ -1,0 +1,22 @@
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Python / Tests
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Local secrets & temp files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+tmp/

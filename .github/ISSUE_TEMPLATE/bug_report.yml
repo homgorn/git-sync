@@ -1,0 +1,23 @@
+name: Bug Report
+description: Report a bug or security concern (for private vulnerabilities, see SECURITY.md)
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow snippet (redact all tokens and keys!)
+      render: yaml
+    validations:
+      required: true
+  - type: input
+    id: push-mode
+    attributes:
+      label: Push mode / flags used
+      placeholder: "push_mode: fast-forward, dry_run: true"

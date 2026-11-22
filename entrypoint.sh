@@ -1,26 +1,68 @@
 #!/bin/sh
+set -eu
 
-set -e
+GIT_SYNC_SCRIPT="${GIT_SYNC_SCRIPT:-/git-sync.sh}"
+SSH_DIR="${SSH_DIR:-${HOME}/.ssh}"
 
-if [[ -n "$SSH_PRIVATE_KEY" ]]; then
-  mkdir -p /root/.ssh
-  echo "$SSH_PRIVATE_KEY" | sed 's/\\n/\n/g' >/root/.ssh/id_rsa
-  chmod 600 /root/.ssh/id_rsa
+write_ssh_key() {
+  key_content="$1"
+  key_path="$2"
+
+  umask 077
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+
+  # Support both multi-line secrets and single-line keys with literal \n escapes
+  case "$key_content" in
+    *'
+'*)
+      printf '%s\n' "$key_content" >"$key_path"
+      ;;
+    *)
+      printf '%s\n' "$key_content" | awk '{ gsub(/\\n/, "\n"); print }' >"$key_path"
+      ;;
+  esac
+
+  chmod 600 "$key_path"
+}
+
+init_known_hosts() {
+  umask 077
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+
+  known_hosts_file="${SSH_DIR}/known_hosts"
+
+  if [ -f "/etc/ssh/git_sync_known_hosts" ]; then
+    cat "/etc/ssh/git_sync_known_hosts" >>"$known_hosts_file"
+  fi
+
+  if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+    printf '\n%s\n' "$SSH_KNOWN_HOSTS" >>"$known_hosts_file"
+  fi
+
+  if [ -f "$known_hosts_file" ]; then
+    chmod 600 "$known_hosts_file"
+  fi
+}
+
+if [ -n "${SSH_PRIVATE_KEY:-}" ]; then
+  write_ssh_key "$SSH_PRIVATE_KEY" "${SSH_DIR}/shared_key"
 fi
 
-if [[ -n "$SOURCE_SSH_PRIVATE_KEY" ]]; then
-  mkdir -p /root/.ssh
-  echo "$SOURCE_SSH_PRIVATE_KEY" | sed 's/\\n/\n/g' >/root/.ssh/src_rsa
-  chmod 600 /root/.ssh/src_rsa
+if [ -n "${SOURCE_SSH_PRIVATE_KEY:-}" ]; then
+  write_ssh_key "$SOURCE_SSH_PRIVATE_KEY" "${SSH_DIR}/source_key"
 fi
 
-if [[ -n "$DESTINATION_SSH_PRIVATE_KEY" ]]; then
-  mkdir -p /root/.ssh
-  echo "$DESTINATION_SSH_PRIVATE_KEY" | sed 's/\\n/\n/g' >/root/.ssh/dst_rsa
-  chmod 600 /root/.ssh/dst_rsa
+if [ -n "${DESTINATION_SSH_PRIVATE_KEY:-}" ]; then
+  write_ssh_key "$DESTINATION_SSH_PRIVATE_KEY" "${SSH_DIR}/destination_key"
 fi
 
-mkdir -p ~/.ssh
-cp /root/.ssh/* ~/.ssh/ 2>/dev/null || true
+if [ -n "${SSH_PRIVATE_KEY:-}${SOURCE_SSH_PRIVATE_KEY:-}${DESTINATION_SSH_PRIVATE_KEY:-}${SSH_KNOWN_HOSTS:-}" ]; then
+  init_known_hosts
+fi
 
-sh -c "/git-sync.sh $*"
+export GIT_SYNC_SSH_DIR="$SSH_DIR"
+
+# Pass positional arguments safely without shell re-evaluation (prevents command injection)
+exec "$GIT_SYNC_SCRIPT" "$@"
